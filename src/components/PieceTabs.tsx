@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { StarRating } from './StarRating';
 import type { SeedPiece } from '../data/seed';
 
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
 interface PieceTabsProps {
   piece: SeedPiece;
 }
@@ -115,24 +120,33 @@ export default function PieceTabs({ piece }: PieceTabsProps) {
       {activeTab === 'recordings' && (
         <div>
           {youtubeLinks.length > 0 ? (
-            <div className="space-y-3">
-              {youtubeLinks.map((link, i) => (
-                <a
-                  key={i}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-gray-400 hover:shadow-sm transition-all bg-white"
-                >
-                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center text-red-500 flex-shrink-0">
-                    ▶
+            <div className="space-y-4">
+              {youtubeLinks.map((link, i) => {
+                const videoId = extractYouTubeId(link.url);
+                return (
+                  <div key={i} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                    {videoId ? (
+                      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                        <iframe
+                          className="absolute inset-0 w-full h-full"
+                          src={`https://www.youtube.com/embed/${videoId}`}
+                          title={link.label}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <a href={link.url} target="_blank" rel="noopener noreferrer"
+                        className="block p-4 text-sm text-gray-600 hover:text-gray-900">
+                        {link.label}
+                      </a>
+                    )}
+                    <div className="px-3 py-2 border-t border-gray-100">
+                      <p className="text-sm font-medium text-gray-800">{link.label}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{link.label}</p>
-                    <p className="text-xs text-gray-400">YouTube</p>
-                  </div>
-                </a>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-400 italic py-8 text-center">
