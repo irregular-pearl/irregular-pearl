@@ -50,21 +50,12 @@ export default function PiecePageLayout({ piece }: PiecePageLayoutProps) {
   }, [isDragging]);
 
   const isExpanded = sidebarWidth > defaultWidth + 100;
-  const blurOpacity = Math.min(1, Math.max(0, (sidebarWidth - defaultWidth - 100) / 200));
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
-      {/* Backdrop blur when dragged wide */}
-      {isExpanded && (
-        <div
-          className="fixed inset-0 bg-[#FAF8F5]/40 backdrop-blur-[2px] z-30 pointer-events-none"
-          style={{ opacity: blurOpacity }}
-        />
-      )}
-
       <div className="flex h-full">
         {/* Main content */}
-        <main className={`flex-1 min-w-0 px-4 md:px-8 lg:px-10 py-6 md:py-8 ${isExpanded ? 'z-20' : ''}`}>
+        <main className="flex-1 min-w-0 px-4 md:px-8 lg:px-10 py-6 md:py-8">
           <div className="mb-6">
             <h1 className="font-['Instrument_Serif'] text-xl md:text-2xl lg:text-[28px] leading-tight mb-1">
               {piece.title}
