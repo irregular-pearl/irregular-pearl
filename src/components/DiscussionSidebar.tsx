@@ -172,7 +172,7 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
   const sortedMessages = [...messages].reverse();
 
   return (
-    <div className="flex flex-col h-full pb-20">
+    <div className="flex flex-col h-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[15px] font-semibold">Discussion</h2>
         <span className="text-xs text-gray-400">
@@ -213,11 +213,10 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
         <div ref={bottomRef} />
       </div>
 
-      {/* Compose — fixed to bottom, width matches sidebar */}
+      {/* Compose — sticky to bottom of sidebar */}
       <form
         onSubmit={handleSubmit}
-        className="fixed bottom-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50"
-        style={{ width: sidebarWidth ? `${sidebarWidth - 1}px` : undefined }}
+        className="sticky bottom-0 bg-white border-t border-l border-gray-200 -mx-4 md:-mx-5 px-4 md:px-5 py-3 z-10"
       >
         <div className="relative">
           <textarea
