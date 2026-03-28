@@ -31,10 +31,6 @@ if (query) {
 
 const isFiltered = !!(query || filter);
 
-// Compute stats
-const composerSet = new Set(seedPieces.map(p => p.composer_name));
-const editionCount = seedPieces.reduce((sum, p) => sum + p.editions.length, 0);
-
 // Group instruments with counts
 const instrumentGroups: Record<string, number> = {};
 for (const piece of seedPieces) {
@@ -101,8 +97,6 @@ if (isFiltered) {
     filteredGroups[group].push(piece);
   }
 }
-
-const currentYear = new Date().getFullYear();
 
 const homeLd = {
   '@context': 'https://schema.org',
@@ -258,14 +252,4 @@ const itemListLd = {
     </main>
   )}
 
-  <footer class="border-t border-border py-5 px-4 md:px-6 flex justify-between items-center text-xs text-muted">
-    <div class="flex gap-4">
-      <a href="/terms" class="text-muted no-underline">Terms</a>
-      <a href="/privacy" class="text-muted no-underline">Privacy</a>
-    </div>
-    <span>© {currentYear} Irregular Pearl — a non-profit for classical music knowledge</span>
-    <div>
-      {seedPieces.length} pieces · {composerSet.size} composers · {editionCount}+ editions
-    </div>
-  </footer>
 </Layout>

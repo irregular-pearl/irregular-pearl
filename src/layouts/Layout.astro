@@ -1,10 +1,13 @@
 ---
+import { seedPieces } from '../data/seed';
+
 interface Props {
   title: string;
   description?: string;
   canonical?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   ogType?: string;
+  hideFooter?: boolean;
 }
 
 const {
@@ -13,7 +16,12 @@ const {
   canonical,
   jsonLd,
   ogType = 'website',
+  hideFooter = false,
 } = Astro.props;
+
+const currentYear = new Date().getFullYear();
+const composerCount = new Set(seedPieces.map(p => p.composer_name)).size;
+const editionCount = seedPieces.reduce((sum, p) => sum + p.editions.length, 0);
 
 const siteName = 'Irregular Pearl';
 const fullTitle = title === 'Home' ? siteName : `${title} | ${siteName}`;
@@ -65,7 +73,21 @@ const canonicalUrl = canonical || Astro.url.href;
 <style>
   @import '../styles/global.css';
 </style>
-<body class="bg-bg text-ink min-h-screen font-body">
-  <slot />
+<body class="bg-bg text-ink min-h-screen font-body flex flex-col">
+  <div class="flex-1">
+    <slot />
+  </div>
+  {!hideFooter && (
+    <footer class="border-t border-border py-5 px-4 md:px-6 flex justify-between items-center text-xs text-muted mt-auto">
+      <div class="flex gap-4">
+        <a href="/terms" class="text-muted no-underline">Terms</a>
+        <a href="/privacy" class="text-muted no-underline">Privacy</a>
+      </div>
+      <span>© {currentYear} Irregular Pearl — a non-profit for classical music knowledge</span>
+      <div>
+        {seedPieces.length} pieces · {composerCount} composers · {editionCount}+ editions
+      </div>
+    </footer>
+  )}
 </body>
 </html>
