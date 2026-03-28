@@ -1,20 +1,64 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Irregular Pearl
 
-# Run and deploy your AI Studio app
+A piece-centric knowledge platform for classical music. Every musical work gets a living page with structured metadata, edition comparisons, community ratings, and threaded discussion from musicians working on the same piece.
 
-This contains everything you need to run your app locally.
+## Stack
 
-View your app in AI Studio: https://ai.studio/apps/09f36a24-b6fc-45bd-9839-c605171d3755
+- **Astro** — islands architecture, near-zero JS for static content
+- **React** — interactive islands (discussions, ratings, working-on button)
+- **Supabase** — auth (Google OAuth), Postgres, Realtime subscriptions
+- **Tailwind CSS v4**
+- **Cloudflare Pages** — edge deployment
 
-## Run Locally
+## Run locally
 
-**Prerequisites:**  Node.js
+```bash
+bun install
+bun run dev
+```
 
+The app works without Supabase credentials using placeholder data. To enable auth, discussions, and ratings, add a `.env` file:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```
+PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+## Database setup
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Run `supabase/schema.sql` in the SQL Editor
+3. Enable Google OAuth in Authentication > Providers
+4. Seed the database:
+
+```bash
+./seed.sh
+```
+
+Requires `SUPABASE_SERVICE_ROLE_KEY` in `.env` or as an env var.
+
+## Deploy
+
+Connected to Cloudflare Pages. Deploys on push to `main`.
+
+Build command: `bun install && bun run build`
+Output directory: `dist`
+
+## Project structure
+
+```
+src/
+  components/     # Astro components + React islands
+  data/           # Seed data (15 pieces, expandable to 100)
+  layouts/        # Base HTML layout
+  lib/            # Supabase client, auth hook, types
+  pages/          # Homepage + piece/[id] pages
+  styles/         # Tailwind global styles
+supabase/
+  schema.sql      # Full database schema with RLS
+  seed.ts         # Database seed script
+```
+
+## License
+
+AGPL-3.0
