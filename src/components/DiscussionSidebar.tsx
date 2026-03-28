@@ -17,23 +17,6 @@ interface DiscussionSidebarProps {
   sidebarWidth?: number;
 }
 
-// Placeholder messages for demo (used when Supabase is not configured)
-const placeholderMessages: Record<string, Message[]> = {
-  'bach-cello-suite-1': [
-    { id: '1', sender: 'Sarah K.', level: 'Teacher', text: 'For students struggling with the Prelude tempo, I recommend starting at quarter=50 and focusing on the string crossings in bars 9-12 before bringing it up. The Henle edition makes these passages much clearer than the Rose.', time: '2h ago', parentId: null },
-    { id: '2', sender: 'Marco R.', level: null, text: "Has anyone compared the Bärenreiter bowings in the Sarabande with Casals' recording? The editorial choices feel like they're pulling away from historical performance practice.", time: '5h ago', parentId: null },
-    { id: '3', sender: 'Jun L.', level: null, text: 'Preparing this for my conservatory audition next month. The Courante is killing me. Any tips on the 16th note runs starting at bar 22?', time: '1d ago', parentId: null },
-    { id: '4', sender: 'Anna L.', level: 'Performer', text: "@Jun slow practice with the metronome, but also try practicing the bariolage patterns in isolation. I wrote a practice guide for this section.", time: '2d ago', parentId: '3' },
-  ],
-  'chopin-ballade-1': [
-    { id: '5', sender: 'Elena P.', level: 'Teacher', text: 'The National Edition (Ekier) really changed how I teach this piece. The fingering suggestions in the coda are significantly different from the Henle and make more musical sense.', time: '3h ago', parentId: null },
-    { id: '6', sender: 'David W.', level: null, text: 'Working on the second theme... the voicing in the left hand is so tricky. Anyone have tips for bringing out the inner melody while keeping the bass light?', time: '1d ago', parentId: null },
-  ],
-  'beethoven-sonata-14': [
-    { id: '7', sender: 'Lisa M.', level: null, text: 'Hot take: the first movement is actually harder to play well than the third. Anyone can play it at tempo but making it sing without being boring requires real control.', time: '4h ago', parentId: null },
-    { id: '8', sender: 'Tom H.', level: 'Teacher', text: '@Lisa totally agree. The pedaling alone is a whole study. Most students over-pedal. Try half-pedaling on each beat change.', time: '6h ago', parentId: '7' },
-  ],
-};
 
 function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -55,7 +38,7 @@ function formatTime(dateStr: string): string {
 export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }: DiscussionSidebarProps) {
   const { user, signIn } = useAuth();
   const [messages, setMessages] = useState<Message[]>(() => {
-    if (!hasSupabase) return placeholderMessages[pieceId] || [];
+    if (!hasSupabase) return [];
     return [];
   });
   const [newMessage, setNewMessage] = useState('');
