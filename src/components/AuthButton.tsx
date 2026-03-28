@@ -69,7 +69,7 @@ export default function AuthButton() {
   return (
     <button
       onClick={handleSignIn}
-      className="text-sm text-gray-600 hover:text-gray-900"
+      className="text-sm font-medium text-[#B45309] hover:text-[#92400E] transition-colors"
     >
       Sign in
     </button>
