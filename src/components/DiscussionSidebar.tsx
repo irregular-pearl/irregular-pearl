@@ -217,7 +217,7 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
       <form
         onSubmit={handleSubmit}
         className="fixed bottom-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50"
-        style={{ width: sidebarWidth ? `${sidebarWidth}px` : undefined }}
+        style={{ width: sidebarWidth ? `${sidebarWidth - 1}px` : undefined }}
       >
         <div className="relative">
           <textarea
@@ -228,7 +228,7 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
               ? "Share a tip, ask a question..."
               : "Sign in to join the discussion..."
             }
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-10 text-[13px] resize-none h-[50px] focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
+            className="w-full border-none outline-none px-3 py-2.5 pr-10 text-[13px] resize-none h-[50px] bg-transparent"
           />
           <button
             type="submit"
