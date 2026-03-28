@@ -5,33 +5,104 @@ import PieceCard from '../components/PieceCard.astro';
 import { seedPieces } from '../data/seed';
 
 const query = Astro.url.searchParams.get('q')?.toLowerCase() || '';
+const filter = Astro.url.searchParams.get('filter') || '';
+const filterType = Astro.url.searchParams.get('type') || ''; // 'instrument', 'composer', 'era'
 
-// Filter pieces by search query
-const filtered = query
-  ? seedPieces.filter(p =>
-      p.title.toLowerCase().includes(query) ||
-      p.composer_name.toLowerCase().includes(query) ||
-      p.instruments.some(i => i.toLowerCase().includes(query))
-    )
-  : seedPieces;
-
-// Group by instrument for homepage display
-const groups: Record<string, typeof seedPieces> = {};
-for (const piece of filtered) {
-  const instrument = piece.instruments[0] || 'Other';
-  // Normalize instrument group names
-  const group = instrument.startsWith('Voice') ? 'Voice' : instrument;
-  if (!groups[group]) groups[group] = [];
-  groups[group].push(piece);
+// Apply filters
+let displayPieces = seedPieces;
+if (query) {
+  displayPieces = seedPieces.filter(p =>
+    p.title.toLowerCase().includes(query) ||
+    p.composer_name.toLowerCase().includes(query) ||
+    p.instruments.some(i => i.toLowerCase().includes(query))
+  );
+} else if (filter) {
+  if (filterType === 'composer') {
+    displayPieces = seedPieces.filter(p => p.composer_name.toLowerCase().includes(filter.toLowerCase()));
+  } else if (filterType === 'era') {
+    displayPieces = seedPieces.filter(p => p.era.toLowerCase().includes(filter.toLowerCase()));
+  } else {
+    // instrument
+    displayPieces = seedPieces.filter(p =>
+      p.instruments.some(i => i.toLowerCase().includes(filter.toLowerCase()))
+    );
+  }
 }
 
-// Sort groups in display order
-const groupOrder = ['Piano', 'Violin', 'Cello', 'Voice', 'Flute', 'Harpsichord'];
-const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
-  const ai = groupOrder.indexOf(a);
-  const bi = groupOrder.indexOf(b);
-  return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-});
+const isFiltered = !!(query || filter);
+
+// Compute stats
+const composerSet = new Set(seedPieces.map(p => p.composer_name));
+const editionCount = seedPieces.reduce((sum, p) => sum + p.editions.length, 0);
+
+// Group instruments with counts
+const instrumentGroups: Record<string, number> = {};
+for (const piece of seedPieces) {
+  const inst = piece.instruments[0]?.startsWith('Voice') ? 'Voice' : piece.instruments[0] || 'Other';
+  instrumentGroups[inst] = (instrumentGroups[inst] || 0) + 1;
+}
+// Merge small groups into "Winds & Other"
+const displayInstruments: { name: string; count: number; filter: string }[] = [];
+let windsCount = 0;
+for (const [name, count] of Object.entries(instrumentGroups)) {
+  if (['Piano', 'Violin', 'Cello', 'Voice'].includes(name)) {
+    displayInstruments.push({ name, count, filter: name });
+  } else {
+    windsCount += count;
+  }
+}
+displayInstruments.push({ name: 'Winds & Other', count: windsCount, filter: 'flute,clarinet,guitar,string' });
+displayInstruments.sort((a, b) => b.count - a.count);
+
+const instrumentEmoji: Record<string, string> = {
+  'Piano': '🎹',
+  'Violin': '🎻',
+  'Cello': '🎻',
+  'Voice': '🧑‍🎤',
+  'Winds & Other': '🎵',
+};
+
+// Top composers
+const composerCounts: Record<string, number> = {};
+for (const piece of seedPieces) {
+  composerCounts[piece.composer_name] = (composerCounts[piece.composer_name] || 0) + 1;
+}
+const topComposers = Object.entries(composerCounts)
+  .sort(([, a], [, b]) => b - a)
+  .slice(0, 8)
+  .map(([name, count]) => ({ name, count, initial: name.split(' ').pop()?.[0] || '?' }));
+
+// Eras with counts
+const eraCounts: Record<string, number> = {};
+for (const piece of seedPieces) {
+  const era = piece.era.replace(/\/.*/, '').trim(); // normalize "Classical/Romantic" to "Classical"
+  eraCounts[era] = (eraCounts[era] || 0) + 1;
+}
+const eras = [
+  { name: 'Baroque', range: 'c. 1600–1750' },
+  { name: 'Classical', range: 'c. 1750–1820' },
+  { name: 'Romantic', range: 'c. 1820–1900' },
+  { name: 'Late Romantic', range: 'c. 1850–1920' },
+  { name: 'Impressionist', range: 'c. 1890–1930' },
+  { name: '20th Century', range: 'c. 1900–2000' },
+  { name: 'Post-Romantic', range: 'c. 1880–1920' },
+].filter(e => eraCounts[e.name]).map(e => ({ ...e, count: eraCounts[e.name] || 0 }));
+
+// Featured pieces (hand-picked)
+const featuredIds = ['bach-cello-suite-1', 'chopin-ballade-1', 'beethoven-violin-concerto'];
+const featured = featuredIds.map(id => seedPieces.find(p => p.id === id)).filter(Boolean);
+
+// For filtered view, group pieces
+const filteredGroups: Record<string, typeof seedPieces> = {};
+if (isFiltered) {
+  for (const piece of displayPieces) {
+    const group = piece.instruments[0]?.startsWith('Voice') ? 'Voice' : piece.instruments[0] || 'Other';
+    if (!filteredGroups[group]) filteredGroups[group] = [];
+    filteredGroups[group].push(piece);
+  }
+}
+
+const currentYear = new Date().getFullYear();
 
 const homeLd = {
   '@context': 'https://schema.org',
@@ -58,7 +129,6 @@ const orgLd = {
   nonprofitStatus: 'NonprofitType',
 };
 
-// ItemList for Google — shows pieces as a rich list in search results
 const itemListLd = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
@@ -76,51 +146,126 @@ const itemListLd = {
 <Layout title="Home" jsonLd={[homeLd, orgLd, itemListLd]}>
   <Navbar />
 
-  <main class="max-w-5xl mx-auto px-4 md:px-6 py-8">
-    {!query && (
-      <div class="text-center mb-10">
-        <h1 class="text-3xl md:text-4xl font-display italic mb-2">Irregular Pearl</h1>
-        <p class="text-muted text-sm md:text-base">
-          {seedPieces.length} pieces. Every edition. A living community.
-        </p>
-      </div>
-    )}
-
-    {query && filtered.length === 0 && (
-      <div class="text-center py-16 text-muted">
-        <p class="text-lg mb-2">No pieces found for "{query}"</p>
-        <p class="text-sm">We're starting with {seedPieces.length} core works and growing. <a href="/" class="underline">Browse all pieces</a></p>
-      </div>
-    )}
-
-    {query && filtered.length > 0 && (
-      <p class="text-sm text-muted mb-6">
-        {filtered.length} result{filtered.length !== 1 ? 's' : ''} for "{query}"
-        <a href="/" class="ml-2 underline">Clear</a>
-      </p>
-    )}
-
-    {sortedGroups.map(([group, pieces]) => (
-      <section class="mb-8">
-        <h2 class="text-[11px] font-mono text-muted uppercase tracking-widest mb-3">{group}</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {pieces.map((piece) => (
-            <PieceCard
-              id={piece.id}
-              title={piece.title}
-              composer_name={piece.composer_name}
-              instruments={piece.instruments}
-              era={piece.era}
-              difficulty={piece.difficulty}
-              duration_minutes={piece.duration_minutes}
-            />
-          ))}
+  {isFiltered ? (
+    <!-- Filtered view: show results -->
+    <main class="max-w-5xl mx-auto px-4 md:px-6 py-8">
+      {query && displayPieces.length === 0 && (
+        <div class="text-center py-16 text-muted">
+          <p class="text-lg mb-2">No pieces found for "{query}"</p>
+          <p class="text-sm">We're starting with {seedPieces.length} core works and growing. <a href="/" class="underline">Browse all pieces</a></p>
         </div>
-      </section>
-    ))}
-  </main>
+      )}
 
-  <footer class="border-t border-border py-6 text-center text-xs text-muted">
-    Irregular Pearl — a non-profit for classical music knowledge
+      {displayPieces.length > 0 && (
+        <div class="mb-6">
+          <p class="text-sm text-muted">
+            {query ? `${displayPieces.length} result${displayPieces.length !== 1 ? 's' : ''} for "${query}"` : `${displayPieces.length} pieces`}
+            <a href="/" class="ml-2 text-accent no-underline hover:underline">← Back</a>
+          </p>
+        </div>
+      )}
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {displayPieces.map((piece) => (
+          <PieceCard
+            id={piece.id}
+            title={piece.title}
+            composer_name={piece.composer_name}
+            instruments={piece.instruments}
+            era={piece.era}
+            difficulty={piece.difficulty}
+            duration_minutes={piece.duration_minutes}
+          />
+        ))}
+      </div>
+    </main>
+  ) : (
+    <!-- Lobby view -->
+    <main>
+      <!-- Hero -->
+      <div class="text-center py-16 md:py-20">
+        <h1 class="text-4xl md:text-5xl font-display italic mb-3">Irregular Pearl</h1>
+        <p class="text-muted text-base md:text-lg">Every piece. Every edition. One community.</p>
+      </div>
+
+      <div class="max-w-[960px] mx-auto px-4 md:px-6">
+        <!-- Featured Pieces -->
+        <section class="mb-12">
+          <h2 class="font-display text-2xl mb-4">Featured Pieces</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {featured.map((piece) => piece && (
+              <a href={`/piece/${piece.id}`} class="block bg-surface border border-border rounded-xl p-5 hover:border-muted hover:shadow-sm transition-all no-underline">
+                <div class="text-[11px] font-mono text-muted uppercase tracking-wider mb-2">{piece.composer_name}</div>
+                <h3 class="font-display text-lg mb-1 text-ink">{piece.title}</h3>
+                {piece.catalog_number && <div class="font-mono text-xs text-muted mb-3">{piece.catalog_number}</div>}
+                <p class="text-xs text-muted leading-relaxed mb-3 line-clamp-3">{piece.description.slice(0, 140)}...</p>
+                <div class="flex gap-1.5 flex-wrap">
+                  {piece.instruments.map(i => <span class="text-[10px] px-2 py-0.5 bg-bg border border-border rounded-full text-muted">{i}</span>)}
+                  <span class="text-[10px] px-2 py-0.5 bg-bg border border-border rounded-full text-muted">{piece.era}</span>
+                  <span class="text-[10px] px-2 py-0.5 bg-bg border border-border rounded-full text-muted">{piece.editions.length} editions</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <!-- Browse by Instrument -->
+        <section class="mb-12">
+          <h2 class="font-display text-2xl mb-4">Browse by Instrument</h2>
+          <div class="grid grid-cols-3 md:grid-cols-5 gap-3">
+            {displayInstruments.map((inst) => (
+              <a href={`/?filter=${encodeURIComponent(inst.filter.split(',')[0])}&type=instrument`} class="block bg-surface border border-border rounded-lg p-4 text-center hover:border-accent transition-all no-underline">
+                <div class="text-[28px] mb-2" style="filter: saturate(0.1) opacity(0.6);">{instrumentEmoji[inst.name] || '🎵'}</div>
+                <div class="text-sm font-medium text-ink">{inst.name}</div>
+                <div class="text-xs text-muted">{inst.count} pieces</div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <!-- Browse by Composer -->
+        <section class="mb-12">
+          <div class="flex justify-between items-baseline mb-4">
+            <h2 class="font-display text-2xl">Browse by Composer</h2>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            {topComposers.map((c) => (
+              <a href={`/?filter=${encodeURIComponent(c.name)}&type=composer`} class="flex items-center gap-2.5 bg-surface border border-border rounded-lg px-3 py-2.5 hover:border-muted transition-all no-underline">
+                <div class="w-9 h-9 rounded-full bg-bg flex items-center justify-center font-display italic text-lg text-muted flex-shrink-0">{c.initial}</div>
+                <div>
+                  <div class="text-sm font-medium text-ink">{c.name.split(' ').pop()}</div>
+                  <div class="text-[11px] text-muted">{c.count} pieces</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <!-- Browse by Era -->
+        <section class="mb-12">
+          <h2 class="font-display text-2xl mb-4">Browse by Era</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {eras.map((era) => (
+              <a href={`/?filter=${encodeURIComponent(era.name)}&type=era`} class="block bg-surface border border-border rounded-lg p-4 hover:border-muted transition-all no-underline">
+                <div class="font-display text-lg text-ink">{era.name}</div>
+                <div class="text-[11px] font-mono text-muted mb-1">{era.range}</div>
+                <div class="text-xs text-muted">{era.count} pieces</div>
+              </a>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  )}
+
+  <footer class="border-t border-border py-5 px-4 md:px-6 flex justify-between items-center text-xs text-muted">
+    <div class="flex gap-4">
+      <a href="/terms" class="hover:text-ink">Terms</a>
+      <a href="/privacy" class="hover:text-ink">Privacy</a>
+    </div>
+    <span>© {currentYear} Irregular Pearl — a non-profit for classical music knowledge</span>
+    <div>
+      {seedPieces.length} pieces · {composerSet.size} composers · {editionCount}+ editions
+    </div>
   </footer>
 </Layout>
