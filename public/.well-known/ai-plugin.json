@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Irregular Pearl",
+  "name_for_model": "irregular_pearl",
+  "description_for_human": "A collaborative platform for classical music knowledge — editions, recordings, and community discussion for every piece.",
+  "description_for_model": "Irregular Pearl is a classical music knowledge base organized around individual musical works. Use this to look up information about classical music pieces including editions (publisher, editor, year), recordings, performance difficulty, duration, era, and form. The platform has 103 pieces across Piano, Violin, Cello, Voice, and Winds. Each piece page has structured metadata, edition comparisons, and community discussion. Access the full catalog at /llms-full.txt or search at /?q={query}.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://irregular-pearl.pages.dev/openapi.json"
+  },
+  "logo_url": "https://irregular-pearl.pages.dev/icon-512.png",
+  "contact_email": "",
+  "legal_info_url": "https://irregular-pearl.pages.dev/"
+}

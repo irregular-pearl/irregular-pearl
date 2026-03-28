@@ -57,8 +57,23 @@ const orgLd = {
   description: 'A non-profit collaborative platform for classical music knowledge.',
   nonprofitStatus: 'NonprofitType',
 };
+
+// ItemList for Google — shows pieces as a rich list in search results
+const itemListLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Classical Music Pieces',
+  description: `${seedPieces.length} classical music works with editions, recordings, and community discussion`,
+  numberOfItems: seedPieces.length,
+  itemListElement: seedPieces.slice(0, 30).map((piece, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `${Astro.url.origin}/piece/${piece.id}`,
+    name: `${piece.title} by ${piece.composer_name}`,
+  })),
+};
 ---
-<Layout title="Home" jsonLd={[homeLd, orgLd]}>
+<Layout title="Home" jsonLd={[homeLd, orgLd, itemListLd]}>
   <Navbar />
 
   <main class="max-w-5xl mx-auto px-4 md:px-6 py-8">

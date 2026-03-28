@@ -16,25 +16,47 @@ if (!piece) {
 const breadcrumb = [piece.instruments[0] || 'Music', piece.composer_name];
 const seoDescription = `${piece.title}${piece.catalog_number ? ` (${piece.catalog_number})` : ''} by ${piece.composer_name} — compare ${piece.editions.length} editions, listen to recordings, and discuss with musicians. ${piece.description.slice(0, 120)}`;
 
+const youtubeLinks = piece.external_links.filter(l => l.type === 'youtube');
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'MusicComposition',
   name: piece.title,
+  alternateName: piece.catalog_number || undefined,
   composer: {
     '@type': 'Person',
     name: piece.composer_name,
   },
   musicCompositionForm: piece.form,
-  musicalKey: piece.catalog_number || undefined,
   genre: piece.era,
   description: piece.description,
   instrument: piece.instruments,
   timeRequired: piece.duration_minutes ? `PT${piece.duration_minutes}M` : undefined,
   url: Astro.url.href,
+  // Google-friendly: link to recordings as audio objects
+  recordedAs: youtubeLinks.map(l => ({
+    '@type': 'MusicRecording',
+    name: l.label,
+    url: l.url,
+  })),
+  // Speakable for Google Assistant
+  speakable: {
+    '@type': 'SpeakableSpecification',
+    cssSelector: ['h1', '.description', '.edition-name'],
+  },
   isPartOf: {
     '@type': 'WebSite',
     name: 'Irregular Pearl',
     url: Astro.url.origin,
+  },
+  // FAQPage-style: helps Google show piece info in featured snippets
+  mainEntity: {
+    '@type': 'Question',
+    name: `What are the best editions of ${piece.title} by ${piece.composer_name}?`,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: piece.editions.map(e => `${e.publisher} (${e.editor}${e.year ? `, ${e.year}` : ''}): ${e.description}`).join(' '),
+    },
   },
 };
 

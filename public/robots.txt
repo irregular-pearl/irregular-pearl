@@ -1,4 +1,44 @@
+# All crawlers welcome
 User-agent: *
+Allow: /
+
+# Google Search
+User-agent: Googlebot
+Allow: /
+
+# Google AI (Gemini, AI Overviews, SGE)
+User-agent: Google-Extended
+Allow: /
+
+# OpenAI (ChatGPT, SearchGPT)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# OpenAI plugins/actions
+User-agent: OAI-SearchBot
+Allow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Microsoft/Bing AI
+User-agent: Bingbot
+Allow: /
+
+# Common crawl (used by many AI models for training)
+User-agent: CCBot
+Allow: /
+
+# Apple (Siri, Spotlight)
+User-agent: Applebot
 Allow: /
 
 Sitemap: https://irregular-pearl.pages.dev/sitemap.xml
