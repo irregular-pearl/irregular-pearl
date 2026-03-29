@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, hasSupabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import GenerativeAvatar from './GenerativeAvatar';
 
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
@@ -52,9 +53,7 @@ export default function AuthButton() {
         {avatarUrl ? (
           <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover" />
         ) : (
-          <div className="w-7 h-7 rounded-full bg-[#E7E5E4] flex items-center justify-center text-[11px] font-semibold text-[#78716C]">
-            {initials}
-          </div>
+          <GenerativeAvatar userId={user.id} size={28} />
         )}
       </a>
     );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, hasSupabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
+import GenerativeAvatar from './GenerativeAvatar';
 
 interface ProfileData {
   id: string;
@@ -139,13 +140,38 @@ export default function ArtistProfile({ userId }: { userId: string }) {
     <div className="max-w-[720px] mx-auto px-4 md:px-6 py-10">
       {/* Header */}
       <div className="flex items-start gap-5 mb-8">
-        {profile.avatar_url ? (
-          <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-[#E7E5E4] flex items-center justify-center text-2xl font-semibold text-[#78716C] flex-shrink-0">
-            {initials}
-          </div>
-        )}
+        <div className="relative flex-shrink-0">
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover" />
+          ) : (
+            <GenerativeAvatar userId={profile.id} size={80} />
+          )}
+          {isOwnProfile && !editing && (
+            <button
+              onClick={async () => {
+                if (profile.avatar_url) {
+                  await supabase.from('users').update({ avatar_url: null }).eq('id', user!.id);
+                  setProfile(prev => prev ? { ...prev, avatar_url: null } : null);
+                } else {
+                  // Restore Google avatar
+                  const googleAvatar = user?.user_metadata?.avatar_url;
+                  if (googleAvatar) {
+                    await supabase.from('users').update({ avatar_url: googleAvatar }).eq('id', user!.id);
+                    setProfile(prev => prev ? { ...prev, avatar_url: googleAvatar } : null);
+                  }
+                }
+              }}
+              className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-white border border-[#E7E5E4] flex items-center justify-center text-[#78716C] hover:text-[#1C1917] cursor-pointer transition-colors"
+              title={profile.avatar_url ? 'Remove photo' : 'Restore photo'}
+            >
+              {profile.avatar_url ? (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              )}
+            </button>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <h1 className="font-['Instrument_Serif'] text-2xl md:text-3xl mb-1">{profile.display_name}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-[#78716C]">
