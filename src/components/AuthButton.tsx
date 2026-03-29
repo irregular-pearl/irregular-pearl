@@ -5,6 +5,7 @@ import GenerativeAvatar from './GenerativeAvatar';
 
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
+  const [dbAvatarUrl, setDbAvatarUrl] = useState<string | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +16,16 @@ export default function AuthButton() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        // Fetch avatar_url from public.users (respects user's choice)
+        supabase.from('users').select('avatar_url').eq('id', session.user.id).single()
+          .then(({ data }) => {
+            setDbAvatarUrl(data?.avatar_url ?? null);
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -39,19 +49,12 @@ export default function AuthButton() {
   }
 
   if (user) {
-    const avatarUrl = user.user_metadata?.avatar_url;
     const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-    const initials = displayName
-      .split(' ')
-      .map((n: string) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
 
     return (
       <a href={`/profile/${user.id}`} className="block no-underline" title={displayName}>
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover" />
+        {dbAvatarUrl ? (
+          <img src={dbAvatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover" />
         ) : (
           <GenerativeAvatar userId={user.id} size={28} />
         )}
