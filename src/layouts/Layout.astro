@@ -81,14 +81,25 @@ const canonicalUrl = canonical || Astro.url.href;
     <slot />
   </div>
   {!hideFooter && (
-    <footer class="border-t border-border py-5 px-4 md:px-6 flex justify-between items-center text-xs text-muted mt-auto">
-      <div class="flex gap-4">
+    <footer class="border-t border-border py-5 px-4 md:px-6 text-xs text-muted mt-auto">
+      <!-- Desktop: three columns -->
+      <div class="hidden md:flex justify-between items-center">
+        <div class="flex gap-4">
+          <a href="/terms" class="text-muted no-underline">Terms</a>
+          <a href="/privacy" class="text-muted no-underline">Privacy</a>
+        </div>
+        <span>© {currentYear} Irregular Pearl — a non-profit for classical music knowledge</span>
+        <div>
+          {seedPieces.length} pieces · {composerCount} composers · {editionCount}+ editions
+        </div>
+      </div>
+      <!-- Mobile: stacked, centered -->
+      <div class="flex flex-col items-center gap-2 md:hidden text-center">
+        <a href="/"><img src="/logo.svg" alt="Irregular Pearl" class="h-5 w-auto" /></a>
         <a href="/terms" class="text-muted no-underline">Terms</a>
         <a href="/privacy" class="text-muted no-underline">Privacy</a>
-      </div>
-      <span>© {currentYear} Irregular Pearl — a non-profit for classical music knowledge</span>
-      <div>
-        {seedPieces.length} pieces · {composerCount} composers · {editionCount}+ editions
+        <div>{seedPieces.length} pieces · {composerCount} composers · {editionCount}+ editions</div>
+        <span>© {currentYear} Irregular Pearl — a non-profit for classical music knowledge</span>
       </div>
     </footer>
   )}
