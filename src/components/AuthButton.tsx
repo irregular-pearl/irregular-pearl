@@ -33,16 +33,12 @@ export default function AuthButton() {
     });
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
-
   if (loading) {
     return <span className="text-sm text-gray-400">...</span>;
   }
 
   if (user) {
+    const avatarUrl = user.user_metadata?.avatar_url;
     const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
     const initials = displayName
       .split(' ')
@@ -52,17 +48,15 @@ export default function AuthButton() {
       .slice(0, 2);
 
     return (
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600">
-          {initials}
-        </div>
-        <button
-          onClick={handleSignOut}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Sign out
-        </button>
-      </div>
+      <a href={`/profile/${user.id}`} className="block no-underline" title={displayName}>
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover" />
+        ) : (
+          <div className="w-7 h-7 rounded-full bg-[#E7E5E4] flex items-center justify-center text-[11px] font-semibold text-[#78716C]">
+            {initials}
+          </div>
+        )}
+      </a>
     );
   }
 

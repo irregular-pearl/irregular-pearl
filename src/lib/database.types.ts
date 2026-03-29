@@ -11,10 +11,44 @@ export interface Database {
           display_name: string;
           instrument: string | null;
           level: UserLevel | null;
+          avatar_url: string | null;
+          bio: string;
+          website: string | null;
+          social_links: Record<string, string>;
+          genres: string[];
+          location: string | null;
+          ensembles: string[];
           created_at: string;
         };
         Insert: Omit<Database['public']['Tables']['users']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
+      };
+      discography: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          year: number | null;
+          role: string | null;
+          url: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['discography']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['discography']['Insert']>;
+      };
+      performances: {
+        Row: {
+          id: string;
+          user_id: string;
+          event_name: string;
+          venue: string | null;
+          date: string | null;
+          piece_id: string | null;
+          is_upcoming: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['performances']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['performances']['Insert']>;
       };
       pieces: {
         Row: {

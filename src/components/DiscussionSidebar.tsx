@@ -4,6 +4,7 @@ import { useAuth } from '../lib/useAuth';
 
 interface Message {
   id: string;
+  userId: string | null;
   sender: string;
   level: string | null;
   text: string;
@@ -64,6 +65,7 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
       if (!error && data) {
         setMessages(data.map((d: any) => ({
           id: d.id,
+          userId: d.user_id,
           sender: d.users.display_name,
           level: d.users.level,
           text: d.text,
@@ -94,6 +96,7 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
 
         const newMsg: Message = {
           id: payload.new.id,
+          userId: payload.new.user_id,
           sender: userData?.display_name || 'Unknown',
           level: userData?.level || null,
           text: payload.new.text,
@@ -181,7 +184,11 @@ export default function DiscussionSidebar({ pieceId, pieceTitle, sidebarWidth }:
                 <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-500 flex-shrink-0">
                   {getInitials(msg.sender)}
                 </div>
-                <span className="text-[13px] font-semibold text-gray-800">{msg.sender}</span>
+                {msg.userId ? (
+                  <a href={`/profile/${msg.userId}`} className="text-[13px] font-semibold text-gray-800 no-underline hover:underline">{msg.sender}</a>
+                ) : (
+                  <span className="text-[13px] font-semibold text-gray-800">{msg.sender}</span>
+                )}
                 {msg.level && (
                   <span className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded capitalize">
                     {msg.level}
