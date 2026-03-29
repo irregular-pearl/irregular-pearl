@@ -39,6 +39,23 @@ interface EditionReview {
   editions: { publisher: string; piece_id: string; pieces: { title: string } };
 }
 
+interface Performance {
+  id: string;
+  event_name: string;
+  venue: string | null;
+  date: string | null;
+  piece_id: string | null;
+  is_upcoming: boolean;
+}
+
+interface DiscographyItem {
+  id: string;
+  title: string;
+  year: number | null;
+  role: string | null;
+  url: string | null;
+}
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
@@ -51,9 +68,11 @@ export default function ArtistProfile({ userId }: { userId: string }) {
   const [workingOn, setWorkingOn] = useState<WorkingOnPiece[]>([]);
   const [posts, setPosts] = useState<DiscussionPost[]>([]);
   const [reviews, setReviews] = useState<EditionReview[]>([]);
+  const [performances, setPerformances] = useState<Performance[]>([]);
+  const [discography, setDiscography] = useState<DiscographyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ bio: '', instrument: '', website: '', location: '' });
+  const [editForm, setEditForm] = useState({ bio: '', instrument: '', website: '', location: '', social_links: {} as Record<string, string> });
 
   useEffect(() => {
     if (!hasSupabase) { setLoading(false); return; }
@@ -72,6 +91,7 @@ export default function ArtistProfile({ userId }: { userId: string }) {
           instrument: profileData.instrument || '',
           website: profileData.website || '',
           location: profileData.location || '',
+          social_links: profileData.social_links || {},
         });
       }
 
@@ -101,6 +121,24 @@ export default function ArtistProfile({ userId }: { userId: string }) {
 
       if (reviewData) setReviews(reviewData as unknown as EditionReview[]);
 
+      const { data: perfData } = await supabase
+        .from('performances')
+        .select('id, event_name, venue, date, piece_id, is_upcoming')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(20);
+
+      if (perfData) setPerformances(perfData as Performance[]);
+
+      const { data: discData } = await supabase
+        .from('discography')
+        .select('id, title, year, role, url')
+        .eq('user_id', userId)
+        .order('year', { ascending: false })
+        .limit(20);
+
+      if (discData) setDiscography(discData as DiscographyItem[]);
+
       setLoading(false);
     };
 
@@ -109,11 +147,13 @@ export default function ArtistProfile({ userId }: { userId: string }) {
 
   const handleSave = async () => {
     if (!isOwnProfile || !user) return;
+    const cleanLinks = Object.fromEntries(Object.entries(editForm.social_links).filter(([, v]) => v));
     await supabase.from('users').update({
       bio: editForm.bio,
       instrument: editForm.instrument || null,
       website: editForm.website || null,
       location: editForm.location || null,
+      social_links: cleanLinks,
     }).eq('id', user.id);
 
     setProfile(prev => prev ? { ...prev, ...editForm } : null);
@@ -231,6 +271,20 @@ export default function ArtistProfile({ userId }: { userId: string }) {
               placeholder="https://..."
             />
           </div>
+          <div>
+            <label className="block text-xs text-[#78716C] mb-2">Social Links</label>
+            <div className="grid grid-cols-2 gap-3">
+              {['Instagram', 'YouTube', 'X / Twitter', 'Facebook'].map(platform => (
+                <input
+                  key={platform}
+                  value={editForm.social_links[platform] || ''}
+                  onChange={e => setEditForm(f => ({ ...f, social_links: { ...f.social_links, [platform]: e.target.value } }))}
+                  className="border border-[#E7E5E4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#B45309]"
+                  placeholder={platform}
+                />
+              ))}
+            </div>
+          </div>
           <div className="flex gap-3 justify-end">
             <button onClick={() => setEditing(false)} className="text-sm text-[#78716C] bg-transparent border-none cursor-pointer p-0">Cancel</button>
             <button onClick={handleSave} className="text-sm text-white bg-[#B45309] hover:bg-[#92400E] px-4 py-1.5 rounded-lg border-none cursor-pointer">Save</button>
@@ -248,6 +302,23 @@ export default function ArtistProfile({ userId }: { userId: string }) {
         <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-sm text-[#B45309] no-underline hover:underline mb-8 block">
           {profile.website.replace(/^https?:\/\//, '')}
         </a>
+      )}
+
+      {/* Social Links */}
+      {!editing && profile.social_links && Object.keys(profile.social_links).some(k => profile.social_links[k]) && (
+        <div className="flex flex-wrap gap-3 mb-8">
+          {Object.entries(profile.social_links).filter(([, v]) => v).map(([platform, url]) => (
+            <a
+              key={platform}
+              href={url.startsWith('http') ? url : `https://${url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[#78716C] hover:text-[#B45309] no-underline border border-[#E7E5E4] px-3 py-1.5 rounded-full transition-colors"
+            >
+              {platform}
+            </a>
+          ))}
+        </div>
       )}
 
       {/* Currently Working On */}
@@ -303,6 +374,112 @@ export default function ArtistProfile({ userId }: { userId: string }) {
                 <div className="text-xs text-[#78716C] mb-1">{p.pieces.title} · {formatDate(p.created_at)}</div>
                 <p className="text-sm text-[#1C1917] leading-relaxed">{p.text.length > 200 ? p.text.slice(0, 200) + '...' : p.text}</p>
               </a>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Performances */}
+      <section className="mb-10">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-['Instrument_Serif'] text-xl">Performances</h2>
+          {isOwnProfile && (
+            <button
+              onClick={async () => {
+                const { data } = await supabase.from('performances').insert({
+                  user_id: user!.id,
+                  event_name: 'New performance',
+                  venue: '',
+                  date: new Date().toISOString().split('T')[0],
+                  is_upcoming: true,
+                }).select().single();
+                if (data) setPerformances(prev => [data as Performance, ...prev]);
+              }}
+              className="text-xs text-[#B45309] hover:text-[#92400E] bg-transparent border-none cursor-pointer p-0"
+            >
+              + Add
+            </button>
+          )}
+        </div>
+        {performances.length === 0 ? (
+          <p className="text-sm text-[#78716C] italic">No performances listed.</p>
+        ) : (
+          <div className="space-y-2">
+            {performances.map(p => (
+              <div key={p.id} className="bg-white border border-[#E7E5E4] rounded-lg px-4 py-3 flex justify-between items-start">
+                <div>
+                  <div className="text-sm font-medium text-[#1C1917]">
+                    {p.event_name}
+                    {p.is_upcoming && <span className="ml-2 text-[10px] bg-[#FEF3C7] text-[#B45309] px-1.5 py-0.5 rounded">Upcoming</span>}
+                  </div>
+                  <div className="text-xs text-[#78716C]">
+                    {p.venue && `${p.venue} · `}{p.date || ''}
+                  </div>
+                </div>
+                {isOwnProfile && (
+                  <button
+                    onClick={async () => {
+                      await supabase.from('performances').delete().eq('id', p.id);
+                      setPerformances(prev => prev.filter(x => x.id !== p.id));
+                    }}
+                    className="text-[#78716C] hover:text-[#DC2626] bg-transparent border-none cursor-pointer p-0 text-xs"
+                    title="Remove"
+                  >×</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Discography */}
+      <section className="mb-10">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-['Instrument_Serif'] text-xl">Discography</h2>
+          {isOwnProfile && (
+            <button
+              onClick={async () => {
+                const { data } = await supabase.from('discography').insert({
+                  user_id: user!.id,
+                  title: 'New recording',
+                  year: new Date().getFullYear(),
+                  role: 'Performer',
+                }).select().single();
+                if (data) setDiscography(prev => [data as DiscographyItem, ...prev]);
+              }}
+              className="text-xs text-[#B45309] hover:text-[#92400E] bg-transparent border-none cursor-pointer p-0"
+            >
+              + Add
+            </button>
+          )}
+        </div>
+        {discography.length === 0 ? (
+          <p className="text-sm text-[#78716C] italic">No recordings listed.</p>
+        ) : (
+          <div className="space-y-2">
+            {discography.map(d => (
+              <div key={d.id} className="bg-white border border-[#E7E5E4] rounded-lg px-4 py-3 flex justify-between items-start">
+                <div>
+                  <div className="text-sm font-medium text-[#1C1917]">
+                    {d.url ? (
+                      <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-[#1C1917] no-underline hover:underline">{d.title}</a>
+                    ) : d.title}
+                  </div>
+                  <div className="text-xs text-[#78716C]">
+                    {d.role && `${d.role} · `}{d.year || ''}
+                  </div>
+                </div>
+                {isOwnProfile && (
+                  <button
+                    onClick={async () => {
+                      await supabase.from('discography').delete().eq('id', d.id);
+                      setDiscography(prev => prev.filter(x => x.id !== d.id));
+                    }}
+                    className="text-[#78716C] hover:text-[#DC2626] bg-transparent border-none cursor-pointer p-0 text-xs"
+                    title="Remove"
+                  >×</button>
+                )}
+              </div>
             ))}
           </div>
         )}
