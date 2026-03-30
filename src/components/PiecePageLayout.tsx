@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import WorkingOnButton from './WorkingOnButton';
+import ActivityLogButton from './ActivityLogButton';
 import PieceTabs from './PieceTabs';
 import DiscussionSidebar from './DiscussionSidebar';
 import type { SeedPiece } from '../data/seed';
@@ -75,7 +75,7 @@ export default function PiecePageLayout({ piece }: PiecePageLayoutProps) {
               {piece.duration_minutes && <span>~{piece.duration_minutes} min</span>}
               <span className="capitalize">{piece.difficulty}</span>
             </div>
-            <WorkingOnButton pieceId={piece.id} />
+            <ActivityLogButton pieceId={piece.id} />
           </div>
           <PieceTabs piece={piece} />
         </main>

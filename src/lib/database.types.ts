@@ -1,6 +1,7 @@
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'professional';
 export type UserLevel = 'student' | 'amateur' | 'professional' | 'teacher';
 export type LinkType = 'imslp' | 'youtube' | 'wikipedia';
+export type ActivityType = 'working_on' | 'listened' | 'practiced' | 'sight_read' | 'took_lesson' | 'performed';
 
 export interface Database {
   public: {
@@ -111,6 +112,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['working_on']['Row'], 'created_at'>;
         Update: never;
       };
+      activity_log: {
+        Row: {
+          id: string;
+          piece_id: string;
+          user_id: string;
+          activity: ActivityType;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['activity_log']['Row'], 'id' | 'created_at'>;
+        Update: never;
+      };
       external_links: {
         Row: {
           id: string;
@@ -144,3 +156,4 @@ export type EditionReview = Database['public']['Tables']['edition_reviews']['Row
 export type Discussion = Database['public']['Tables']['discussions']['Row'];
 export type ExternalLink = Database['public']['Tables']['external_links']['Row'];
 export type User = Database['public']['Tables']['users']['Row'];
+export type ActivityLog = Database['public']['Tables']['activity_log']['Row'];

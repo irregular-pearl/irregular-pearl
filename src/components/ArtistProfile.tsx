@@ -18,8 +18,10 @@ interface ProfileData {
   created_at: string;
 }
 
-interface WorkingOnPiece {
+interface ActivityPiece {
   piece_id: string;
+  activity: string;
+  created_at: string;
   pieces: { title: string; composer_name: string; catalog_number: string | null };
 }
 
@@ -65,7 +67,7 @@ export default function ArtistProfile({ userId }: { userId: string }) {
   const isOwnProfile = user?.id === userId;
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [workingOn, setWorkingOn] = useState<WorkingOnPiece[]>([]);
+  const [workingOn, setWorkingOn] = useState<ActivityPiece[]>([]);
   const [posts, setPosts] = useState<DiscussionPost[]>([]);
   const [reviews, setReviews] = useState<EditionReview[]>([]);
   const [performances, setPerformances] = useState<Performance[]>([]);
@@ -96,11 +98,12 @@ export default function ArtistProfile({ userId }: { userId: string }) {
       }
 
       const { data: workingData } = await supabase
-        .from('working_on')
-        .select('piece_id, pieces(title, composer_name, catalog_number)')
-        .eq('user_id', userId);
+        .from('activity_log')
+        .select('piece_id, activity, created_at, pieces(title, composer_name, catalog_number)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-      if (workingData) setWorkingOn(workingData as unknown as WorkingOnPiece[]);
+      if (workingData) setWorkingOn(workingData as unknown as ActivityPiece[]);
 
       const { data: postData } = await supabase
         .from('discussions')
@@ -351,21 +354,34 @@ export default function ArtistProfile({ userId }: { userId: string }) {
         )}
       </section>
 
-      {/* Currently Working On */}
+      {/* Activity Log */}
       <section className="mb-10">
-        <h2 className="font-['Instrument_Serif'] text-xl mb-4">Currently Working On</h2>
+        <h2 className="font-['Instrument_Serif'] text-xl mb-4">Activity</h2>
         {workingOn.length === 0 ? (
           <EmptyState
-            message={isOwnProfile ? "Mark pieces you're practicing from any piece page." : "No pieces marked yet."}
+            message={isOwnProfile ? "Log activity on pieces from any piece page." : "No activity yet."}
           />
         ) : (
           <div className="space-y-2">
-            {workingOn.map(w => (
-              <a key={w.piece_id} href={`/piece/${w.piece_id}`} className="block bg-surface border border-border rounded-lg px-4 py-3 hover:border-muted transition-all no-underline">
-                <div className="text-sm font-medium text-ink">{w.pieces.title}</div>
-                <div className="text-xs text-muted">{w.pieces.composer_name}{w.pieces.catalog_number ? ` · ${w.pieces.catalog_number}` : ''}</div>
-              </a>
-            ))}
+            {workingOn.map(w => {
+              const activityLabels: Record<string, string> = {
+                working_on: '✊ Working on',
+                listened: '👂 Listened',
+                practiced: '🎵 Practiced',
+                sight_read: '🏁 Sight-read',
+                took_lesson: '📖 Lesson',
+                performed: '🎤 Performed',
+              };
+              return (
+                <a key={`${w.piece_id}-${w.created_at}`} href={`/piece/${w.piece_id}`} className="block bg-surface border border-border rounded-lg px-4 py-3 hover:border-muted transition-all no-underline">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">{activityLabels[w.activity] || w.activity}</span>
+                  </div>
+                  <div className="text-sm font-medium text-ink">{w.pieces.title}</div>
+                  <div className="text-xs text-muted">{w.pieces.composer_name}{w.pieces.catalog_number ? ` · ${w.pieces.catalog_number}` : ''}</div>
+                </a>
+              );
+            })}
           </div>
         )}
       </section>

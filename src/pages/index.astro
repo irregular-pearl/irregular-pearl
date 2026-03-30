@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import PieceCard from '../components/PieceCard.astro';
+import PieceActivityStats from '../components/PieceActivityStats';
 import { seedPieces } from '../data/seed';
 
 const query = Astro.url.searchParams.get('q')?.toLowerCase() || '';
@@ -198,6 +199,7 @@ const itemListLd = {
                   <span class="text-[10px] px-2 py-0.5 bg-bg border border-border rounded-full text-muted">{piece.era}</span>
                   <span class="text-[10px] px-2 py-0.5 bg-bg border border-border rounded-full text-muted">{piece.editions.length} editions</span>
                 </div>
+                <PieceActivityStats pieceId={piece.id} client:idle />
               </a>
             ))}
           </div>
